@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="vendor/three.min.js"></script>
+    <script src="vendor/OrbitControls.js"></script>
+  </head>
+  <body>
+  <button type="button" id="draw" onclick="switchDrawMode()">Click To Draw</button>
+  <div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+    <script>
+
+var container, scene, camera, renderer, controls, stats;
+var mesh;
+var jsonLoader = new THREE.JSONLoader(); 
+var mesh, geometry;
+
+var projector = new THREE.Projector(), 
+    mouse_vector = new THREE.Vector3(),
+    mouse = { x: 0, y: 0, z: 1 },
+    ray = new THREE.Raycaster( new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0) );
+
+var nextPoint = 0;
+
+var clickPlane, line, helperline;
+var maxPoints = 100;
+var firstPointChecked = false;
+
+var cubesHolder = [];
+var cubeSize = 1;
+init(); 
+animate();
+  
+function init()
+    {
+    scene = new THREE.Scene();
+
+    var SCREEN_WIDTH = window.innerWidth; 
+    var SCREEN_HEIGHT = window.innerHeight; 
+    var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 200000;
+    camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR); 
+    camera.position.set(-200,200,200); 
+    camera.lookAt(scene.position);   
+    scene.add(camera); 
+
+    // RENDERER
+    if (window.WebGLRenderingContext) 
+        renderer = new THREE.WebGLRenderer({antialias:true, alpha: true });
+    else
+        renderer = new THREE.CanvasRenderer({antialias:true, alpha: true });
+
+    renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT); 
+
+
+    renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
+    renderer.domElement.addEventListener( 'mousedown', onMouseClick, false );
+    
+    container = document.getElementById( 'ThreeJS' ); 
+    container.appendChild( renderer.domElement ); 
+    
+    // Grid Helper
+    var grid = new THREE.GridHelper(1000,25);
+    scene.add(grid);
+
+    // Plane for picking clicks
+    var planeGeometry = new THREE.PlaneGeometry(2000, 2000);
+        planeGeometry.applyMatrix( new THREE.Matrix4().makeRotationX(-Math.PI/2) );
+    clickPlane = new THREE.Mesh(planeGeometry, new THREE.MeshNormalMaterial());
+    // hide the plane
+    clickPlane.visible= false;
+    scene.add(clickPlane);
+
+    // Line that will be drawn
+    geometry = new THREE.Geometry();
+    linemat = new THREE.LineBasicMaterial({color: 0xff0000});
+
+    for(var i=0;i<maxPoints;i++){
+        geometry.vertices.push(new THREE.Vector3(0,0,0));
+    }
+    geometry.verticesNeedUpdate = true;           
+    line = new THREE.Line(geometry, linemat);
+    scene.add(line);  
+
+
+    // Helper line to display on mouse over
+    geometryHelper = new THREE.Geometry();
+    geometryHelper.vertices[0] = new THREE.Vector3(0,0,0);
+    geometryHelper.vertices[1] = new THREE.Vector3(0,0,0);
+    
+    geometryHelper.verticesNeedUpdate = true;           
+    helperline = new THREE.Line(geometryHelper, linemat);
+    scene.add(helperline);
+
+    controls = new THREE.OrbitControls( camera, renderer.domElement ); 
+
+    var ambientLight = new THREE.AmbientLight(0xffffff); 
+    scene.add(ambientLight);
+    }
+
+function animate() 
+    {
+    requestAnimationFrame( animate ); 
+    renderer.render( scene, camera );   
+    controls.update(); 
+    }
+
+
+function onMouseClick( event_info ) 
+{
+    // Trigger event on Left click only
+    if(event_info.button===0)
+    {
+    event_info.preventDefault();  
+    mouse.x = ( event_info.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event_info.clientY / window.innerHeight ) * 2 + 1;    
+    mouse_vector.set( mouse.x, mouse.y, mouse.z );
+    projector.unprojectVector( mouse_vector, camera );
+    var direction = mouse_vector.sub( camera.position ).normalize();
+    ray.set( camera.position, direction );
+    // If drawing is set to true
+    if(isDrawing===true)
+        {
+        intersects = ray.intersectObject(clickPlane, false );
+        // If the ray intersect the plance
+        if(intersects.length>0)
+            {
+            // After one click set the initial point to true
+            firstPointChecked = true;
+            if(Math.abs(intersects[0].point.x - line.geometry.vertices[0].x) < 2 && Math.abs(intersects[0].point.z - line.geometry.vertices[0].z) < 2 ){
+                console.log('Close Line');
+                for(var i=nextPoint;i<maxPoints-nextPoint;i++)
+                {
+                line.geometry.vertices[i].x = line.geometry.vertices[0].x;
+                line.geometry.vertices[i].y = line.geometry.vertices[0].y;
+                line.geometry.vertices[i].z = line.geometry.vertices[0].z;
+                line.geometry.verticesNeedUpdate = true;
+                }
+                switchDrawMode()
+            }else{
+            
+            // Move all the next point to the last point
+            for(var i=nextPoint;i<maxPoints-nextPoint;i++)
+                {
+                line.geometry.vertices[i].x = intersects[0].point.x;
+                line.geometry.vertices[i].y = intersects[0].point.y;
+                line.geometry.vertices[i].z = intersects[0].point.z;
+                line.geometry.verticesNeedUpdate = true;
+                }
+            // Increase points counter
+            nextPoint++
+            // draw helper line
+            helperline.geometry.vertices[0].x = intersects[0].point.x;
+            helperline.geometry.vertices[0].y = intersects[0].point.y;
+            helperline.geometry.vertices[0].z = intersects[0].point.z;
+            helperline.geometry.verticesNeedUpdate = true; 
+            }
+        }
+        }
+    }
+}
+
+function onMouseMove( event_info ) 
+    {
+    event_info.preventDefault();  
+    mouse.x = ( event_info.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event_info.clientY / window.innerHeight ) * 2 + 1;    
+    mouse_vector.set( mouse.x, mouse.y, mouse.z );
+    projector.unprojectVector( mouse_vector, camera );
+    var direction = mouse_vector.sub( camera.position ).normalize();
+    ray.set( camera.position, direction );
+    intersects = ray.intersectObject(clickPlane, false );
+        if(intersects.length>0){
+            if(helperline.geometry.vertices[0]!==helperline.geometry.vertices[1])
+                if(isDrawing===true){
+                    if(firstPointChecked === true){
+                        helperline.geometry.vertices[1].x = intersects[0].point.x;
+                        helperline.geometry.vertices[1].y = intersects[0].point.y;
+                        helperline.geometry.vertices[1].z = intersects[0].point.z;
+                        helperline.geometry.verticesNeedUpdate = true; 
+                    }
+            }
+        }
+
+    }
+
+// Detect mouse outside ThreeJS
+var threejs = document.getElementById('ThreeJS')
+threejs.onmouseout = function(){
+    helperline.geometry.vertices[1].x = helperline.geometry.vertices[0].x;
+    helperline.geometry.vertices[1].y = helperline.geometry.vertices[0].y;
+    helperline.geometry.vertices[1].z = helperline.geometry.vertices[0].z;
+    helperline.geometry.verticesNeedUpdate = true; 
+            
+}
+
+// Function To Start/Stop drawing lines
+var isDrawing = false;
+function switchDrawMode(){
+var drawMode = document.getElementById('draw')
+    if(isDrawing===false){
+        drawMode.innerHTML = 'Click to Stop Drawing';
+        isDrawing = true;
+    }else if(isDrawing===true){
+        drawMode.innerHTML = 'Click To Draw';
+        isDrawing = false;
+        if(nextPoint>0){
+            if(helperline)
+                scene.remove(helperline)
+            for(var j = 0;j<nextPoint;j++){
+            var cube = new THREE.Mesh(new THREE.SphereGeometry(cubeSize), new THREE.MeshBasicMaterial({color:0xff0000}));
+            cube.position.x = line.geometry.vertices[j].x;
+            cube.position.y = line.geometry.vertices[j].y;
+            cube.position.z = line.geometry.vertices[j].z;
+            scene.add(cube);
+            console.log(cube)
+            }
+        }
+    }
+}
+    </script>
+    </div>
+  </body>
+</html>

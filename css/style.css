@@ -1,0 +1,48 @@
+body {
+		position: fixed;
+		color: #ffffff;
+		font-family:Monospace;
+		font-size:13px;
+		text-align:center;
+		font-weight: bold;
+
+		background-color: #ffffff;
+		margin: 0px;
+		overflow: hidden;
+	}
+#ThreeJS{
+	position: fixed;
+	z-index: 1;
+}
+#menu{
+	position: fixed;
+	top: 20px;
+	left: 10px;
+	height: calc(30% - 30px);
+	width: 250px;
+	background-color: rgba(161,161,161,0.5);
+	border-style: solid;
+	border-width: 2px;
+	border-color: rgb(116,116,116);
+	border-radius: 5px;
+	z-index: 10;
+}
+#listOfObjects{
+	position: fixed;
+	top: calc(30% + 10px);
+	left: 10px;
+	height: calc(70% - 30px);
+	width: 250px;
+	background-color: rgba(161,161,161,0.5);
+	border-style: solid;
+	border-width: 2px;
+	border-color: rgb(116,116,116);
+	border-radius: 5px;
+	z-index: 10;
+}
+.buttons{
+	position: relative;
+	width: calc(100% - 20px);
+	line-height: 20px;
+	top: 10px;
+}
