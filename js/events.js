@@ -18,7 +18,6 @@ function onMouseClick( event_info )
     if(editLines===true){
         intersects = ray.intersectObjects( globalHelper.children, true );
         if(intersects.length>0){
-            console.log(intersects[0].object.name)
             var selectedLineID = intersects[0].object.id;
             editLine(linesInScene.getObjectById(selectedLineID));
             }
@@ -72,13 +71,17 @@ function makeNewPoints(){
 }
 var tempPoints = new THREE.Object3D();
 function editLine(line){
+    if(globalHelper.children.length>1){
+        globalHelper.remove(globalHelper.children[1])
+        console.log('true')
+    }
+    /*
     if(tempPoints.children.length>0){
         for(var i=0;i<tempPoints.children.length;i++){
-            scene.remove(tempPoints.children[i]);
-            scene.remove(tempPoints)
-            tempPoints = new THREE.Object3D();
+            tempPoints.remove(tempPoints.children[i]);
         }
-    }
+        globalHelper.remove(tempPoints)
+    }*/
     if(line){
         for(var j=0;j<line.geometry.vertices.length;j++){
             var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 12), new THREE.MeshBasicMaterial({color:0xff0000}));

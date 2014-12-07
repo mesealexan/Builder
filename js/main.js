@@ -16,10 +16,12 @@ var constructingLines = [];
 var constructingPoints = [];
 var linesInScene = new THREE.Object3D();
 var globalHelper  = new THREE.Object3D();
-
-//Call the scene
+var counter = 0;
+var kkt;
+var oldAdd
+//THREE.Object3D.prototype.add.arguments
 init(); 
-  
+
 function init()
     {
 
@@ -31,9 +33,12 @@ function init()
     camera.position.set(-200,200,200);   
     scene.add(camera); 
 
+    //scene.__proto__.__proto__.addEventListener('onchange', function(){counter++})
     renderer = new THREE.WebGLRenderer({antialias:true, alpha: true });
     renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT); 
-
+    THREE.EventDispatcher.call( scene );
+    scene.addEventListener('load', function(event) {alert("GOT THE EVENT");});
+    //scene.dispatchEvent({type:'load'});
     renderer.domElement.addEventListener( 'mousemove', onMouseMove, false );
     renderer.domElement.addEventListener( 'mousedown', onMouseClick, false );
 
@@ -42,7 +47,7 @@ function init()
     container = document.getElementById( 'ThreeJS' ); 
     container.appendChild( renderer.domElement ); 
 
-    controls = new THREE.OrbitControls( camera, renderer.domElement );     
+    controls = new THREE.OrbitControls( camera, container );     
     // Grid Helper
     grid = gridGenerator (10, 100, 10, 0x8C8C8C, 0xB0B0B0, 0x00ff00);
     grid.position.y = -0.3;
@@ -86,3 +91,6 @@ function animate()
 
 
 
+function func(){
+    console.log('ping')
+}
